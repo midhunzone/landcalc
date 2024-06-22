@@ -7,52 +7,30 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         body {
-            background-color: #f8f9fa;
-            padding: 50px;
+            padding: 20px;
         }
         .container {
-            max-width: 800px;
-            background: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            margin-bottom: 20px;
-            font-size: 24px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .result {
-            margin-top: 20px;
-            font-size: 18px;
-            font-weight: bold;
-        }
-        .table {
-            margin-top: 20px;
+            max-width: 600px;
+            margin: auto;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Survey Number and Area Converter</h1>
-        <form id="data-form">
-            <div class="form-row">
-                <div class="form-group col-md-4">
-                    <label for="survey_number">Survey Number:</label>
-                    <input type="text" class="form-control" id="survey_number" name="survey_number" required>
-                </div>
-                <div class="form-group col-md-4">
-                    <label for="are_value">Area in Are:</label>
-                    <input type="text" class="form-control" id="are_value" name="are_value" required>
-                </div>
-                <div class="form-group col-md-4">
-                    <button type="button" class="btn btn-primary" id="add-row" style="margin-top: 31px;">Add Row</button>
-                </div>
+        <h2 class="text-center">Survey Number and Area Converter</h2>
+        <form id="area-form">
+            <div class="form-group">
+                <label for="survey_number">Survey Number:</label>
+                <input type="text" class="form-control" id="survey_number" required>
             </div>
+            <div class="form-group">
+                <label for="area_in_are">Area in Are:</label>
+                <input type="number" step="0.01" class="form-control" id="area_in_are" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Row</button>
         </form>
-        <table class="table table-bordered">
+        <br>
+        <table class="table table-striped">
             <thead>
                 <tr>
                     <th>Survey Number</th>
@@ -62,55 +40,46 @@
                 </tr>
             </thead>
             <tbody id="data-table">
-                <!-- Dynamic rows will be added here -->
+                {% for row in data %}
+                <tr>
+                    <td>{{ row.survey_number }}</td>
+                    <td>{{ "%.2f"|format(row.area_in_are) }}</td>
+                    <td>{{ "%.2f"|format(row.area_in_cents) }}</td>
+                    <td><button class="btn btn-danger delete-btn" data-index="{{ loop.index0 }}">Delete</button></td>
+                </tr>
+                {% endfor %}
             </tbody>
         </table>
-        <button class="btn btn-success" id="download-csv">Download CSV</button>
+        <div class="text-right">
+            <h5>Total Area in Are: {{ "%.2f"|format(total_are) }}</h5>
+            <h5>Total Area in Cents: {{ "%.2f"|format(total_cents) }}</h5>
+        </div>
+        <button id="download-csv" class="btn btn-success">Download CSV</button>
     </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script>
-        document.getElementById('add-row').addEventListener('click', function() {
-            var surveyNumber = document.getElementById('survey_number').value;
-            var areValue = document.getElementById('are_value').value;
-            var centsValue = (parseFloat(areValue) * 2.47105).toFixed(2);
+        $(document).ready(function() {
+            $('#area-form').submit(function(event) {
+                event.preventDefault();
+                var survey_number = $('#survey_number').val();
+                var area_in_are = $('#area_in_are').val();
+                $.post('/add', { survey_number: survey_number, area_in_are: area_in_are }, function() {
+                    location.reload();
+                });
+            });
 
-            var table = document.getElementById('data-table');
-            var row = table.insertRow();
-            row.insertCell(0).innerHTML = surveyNumber;
-            row.insertCell(1).innerHTML = areValue;
-            row.insertCell(2).innerHTML = centsValue;
-            var actionCell = row.insertCell(3);
-            var deleteButton = document.createElement('button');
-            deleteButton.innerHTML = 'Delete';
-            deleteButton.className = 'btn btn-danger';
-            deleteButton.onclick = function() {
-                var rowIndex = this.parentNode.parentNode.rowIndex;
-                document.getElementById('data-table').deleteRow(rowIndex - 1);
-            };
-            actionCell.appendChild(deleteButton);
-        });
+            $('.delete-btn').click(function() {
+                var index = $(this).data('index');
+                $.post('/delete', { index: index }, function() {
+                    location.reload();
+                });
+            });
 
-        document.getElementById('download-csv').addEventListener('click', function() {
-            var table = document.getElementById('data-table');
-            var rows = table.rows;
-            var csvContent = 'data:text/csv;charset=utf-8,Survey Number,Area in Are,Area in Cents\n';
-
-            for (var i = 0; i < rows.length; i++) {
-                var cells = rows[i].cells;
-                var rowContent = [];
-                for (var j = 0; j < cells.length - 1; j++) {
-                    rowContent.push(cells[j].innerText);
-                }
-                csvContent += rowContent.join(',') + '\n';
-            }
-
-            var encodedUri = encodeURI(csvContent);
-            var link = document.createElement('a');
-            link.setAttribute('href', encodedUri);
-            link.setAttribute('download', 'data.csv');
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            $('#download-csv').click(function() {
+                window.location.href = '/download';
+            });
         });
     </script>
 </body>
 </html>
+
