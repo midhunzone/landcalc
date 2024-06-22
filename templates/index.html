@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survey Number and Area Converter</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding: 50px;
+        }
+        .container {
+            max-width: 800px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .table {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Survey Number and Area Converter</h1>
+        <form id="data-form">
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label for="survey_number">Survey Number:</label>
+                    <input type="text" class="form-control" id="survey_number" name="survey_number" required>
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="are_value">Area in Are:</label>
+                    <input type="text" class="form-control" id="are_value" name="are_value" required>
+                </div>
+                <div class="form-group col-md-4">
+                    <button type="button" class="btn btn-primary" id="add-row" style="margin-top: 31px;">Add Row</button>
+                </div>
+            </div>
+        </form>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Survey Number</th>
+                    <th>Area in Are</th>
+                    <th>Area in Cents</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="data-table">
+                <!-- Dynamic rows will be added here -->
+            </tbody>
+        </table>
+        <button class="btn btn-success" id="download-csv">Download CSV</button>
+    </div>
+    <script>
+        document.getElementById('add-row').addEventListener('click', function() {
+            var surveyNumber = document.getElementById('survey_number').value;
+            var areValue = document.getElementById('are_value').value;
+            var centsValue = (parseFloat(areValue) * 2.47105).toFixed(2);
+
+            var table = document.getElementById('data-table');
+            var row = table.insertRow();
+            row.insertCell(0).innerHTML = surveyNumber;
+            row.insertCell(1).innerHTML = areValue;
+            row.insertCell(2).innerHTML = centsValue;
+            var actionCell = row.insertCell(3);
+            var deleteButton = document.createElement('button');
+            deleteButton.innerHTML = 'Delete';
+            deleteButton.className = 'btn btn-danger';
+            deleteButton.onclick = function() {
+                var rowIndex = this.parentNode.parentNode.rowIndex;
+                document.getElementById('data-table').deleteRow(rowIndex - 1);
+            };
+            actionCell.appendChild(deleteButton);
+        });
+
+        document.getElementById('download-csv').addEventListener('click', function() {
+            var table = document.getElementById('data-table');
+            var rows = table.rows;
+            var csvContent = 'data:text/csv;charset=utf-8,Survey Number,Area in Are,Area in Cents\n';
+
+            for (var i = 0; i < rows.length; i++) {
+                var cells = rows[i].cells;
+                var rowContent = [];
+                for (var j = 0; j < cells.length - 1; j++) {
+                    rowContent.push(cells[j].innerText);
+                }
+                csvContent += rowContent.join(',') + '\n';
+            }
+
+            var encodedUri = encodeURI(csvContent);
+            var link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', 'data.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    </script>
+</body>
+</html>
